@@ -1,0 +1,45 @@
+const { ethers } = require("ethers");
+const { expect } = require("chai");
+
+describe("TokenSale Contract", function () {
+  let owner;
+  let user1;
+  let tokenSale;
+
+  beforeEach(async function () {
+    [owner, user1] = await ethers.getSigners();
+
+    // Deploy the TokenSale contract
+    const TokenSale = await ethers.getContractFactory("TokenSale");
+    tokenSale = await TokenSale.deploy(/* constructor parameters */);
+  });
+
+  it("should allow contributions during presale", async function () {
+    // Start presale
+    await tokenSale.startPresale();
+
+    // User1 contributes 1 ether
+    const contributionAmount = ethers.utils.parseEther("1.0");
+    await tokenSale.connect(user1).contribute({ value: contributionAmount });
+
+    // Check if contribution was successful
+    const user1Contribution = await tokenSale.contributions(user1.address);
+    expect(user1Contribution).to.equal(contributionAmount);
+  });
+
+  it("should allow voting during presale", async function () {
+    // Register user1 as a voter
+    await tokenSale.registerVoter();
+
+    // Start presale
+    await tokenSale.startPresale();
+
+    // User1 votes for a candidate
+    const candidate = ethers.utils.formatBytes32String("Candidate1");
+    await tokenSale.connect(user1).castVote(candidate);
+
+    // Check if vote was successful
+    const votesForCandidate = await tokenSale.getVotesForCandidate(candidate);
+    expect(votesForCandidate).to.equal(1);
+  });
+});
